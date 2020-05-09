@@ -1,0 +1,3 @@
+rootProject.name='HttpAgent'
+include ':app'
+include ':httplibrary'

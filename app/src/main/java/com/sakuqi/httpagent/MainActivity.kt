@@ -1,14 +1,12 @@
 package com.sakuqi.httpagent
 
-import android.content.res.AssetManager
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
 import android.util.Log
 import android.view.View
+import androidx.appcompat.app.AppCompatActivity
 import com.sakuqi.httplibrary.*
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -50,7 +48,7 @@ class MainActivity : AppCompatActivity() {
             .setMethod(HttpMethod.POST)
             //.setBody(HttpBody(mapOf(Pair("keyword","苹果"))))
             //.setBody(HttpBody("{\"keyword\":\"苹果\"}"))
-            .setBody(HttpBody(mapOf(Pair("hahha","value")), mapOf(Pair("file111",file))))
+            .setBody(HttpBody(mapOf(Pair("hahha", "value")), mapOf(Pair("file111", file))))
             .build()
             .executeAsync(object : HttpCallBack<ResponseData> {
                 override fun onReceivedData(result: ResponseData) {

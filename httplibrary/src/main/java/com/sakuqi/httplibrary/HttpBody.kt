@@ -1,5 +1,7 @@
 package com.sakuqi.httplibrary
 
+import org.json.JSONObject
+import java.io.File
 import java.nio.charset.Charset
 
 /**
@@ -8,23 +10,27 @@ import java.nio.charset.Charset
  * description: 请求内容
  */
 class HttpBody() {
-    private var byteArray: ByteArray? = null
+    internal var file: Map<String,File>? = null
+    internal var params : Map<String,String>? = null
+    internal var body:String? = null
+    internal var type:BodyType? = null
 
-    constructor(dataByte:ByteArray):this(){
-        this.byteArray = dataByte
+    constructor(file: Map<String,File>) : this() {
+        this.file = file
     }
 
-    constructor(dataStr:String):this(){
-        this.byteArray = dataStr.toByteArray(Charset.forName(CHARSET))
+    constructor(params:Map<String,String>?=null,file: Map<String,File>?=null):this() {
+        this.params = params
+        this.file = file
     }
 
-    /**
-     * 返回请求内容
-     */
-    fun getByteArray():ByteArray{
-        if(byteArray == null){
-            byteArray = byteArrayOf()
-        }
-        return byteArray!!
+    constructor(body:String,type: BodyType = BodyType.JSON):this(){
+        this.body = body
+        this.type = type
     }
 }
+
+enum class BodyType{
+    JSON,XML
+}
+

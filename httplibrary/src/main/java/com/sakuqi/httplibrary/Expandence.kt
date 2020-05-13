@@ -8,8 +8,3 @@ import android.util.Log
  * description:
  */
 
-fun Log.debug(tag:String = "HttpAgent",message:String){
-    if(BuildConfig.DEBUG){
-        Log.d(tag,message)
-    }
-}

@@ -2,33 +2,36 @@ package com.sakuqi.httplibrary
 
 import android.annotation.SuppressLint
 import kotlin.reflect.KClass
-import kotlin.reflect.jvm.javaType
-import kotlin.reflect.jvm.jvmName
 
 /**
  * create: by huangDianHua
  * time: 2020/5/8 15:41:48
  * description: 网络请求代理
  */
-class HttpProxy (var builder:HttpRequest.Builder){
-    private var engine:IHttpEngine = EngineFactory.createEngine()
+class HttpProxy(var builder: HttpRequest.Builder) {
+    private var engine: IHttpEngine = EngineFactory.createEngine()
+
     init {
         engine.initConfig(builder)
     }
 
-    fun <T : ResponseData> execute(tClass: KClass<T>,getCancel:((HttpRequestCancel)->Unit)?): T {
-        if(builder.url.isNullOrEmpty()){
-            return getResponseData(tClass,UNKNOWN_HOST_CODE,"url is null or empty")
-        }else if(!builder.url!!.startsWith("http://") and !builder.url!!.startsWith("https://")){
-            return getResponseData(tClass, UNKNOWN_HOST_CODE,"url is error")
+    fun <T : ResponseData> execute(
+        tClass: KClass<T>,
+        getCancel: ((HttpRequestCancel) -> Unit)?,
+        uploadCallback: ((current: Long, total: Long) -> Unit)? = null
+    ): T {
+        if (builder.url.isNullOrEmpty()) {
+            return getResponseData(tClass, UNKNOWN_HOST_CODE, "url is null or empty")
+        } else if (!builder.url!!.startsWith("http://") and !builder.url!!.startsWith("https://")) {
+            return getResponseData(tClass, UNKNOWN_HOST_CODE, "url is error")
         }
         engine.createRequest()
         getCancel?.invoke(engine)
-        val responseData = engine.execute()
-        return if(responseData != null){
-            getResponseData(tClass,responseData.code,responseData.data)
-        }else{
-            getResponseData(tClass, UNKNOWN_EXCEPTION_CODE,"未知错误")
+        val responseData = engine.execute(uploadCallback)
+        return if (responseData != null) {
+            getResponseData(tClass, responseData.code, responseData.data)
+        } else {
+            getResponseData(tClass, UNKNOWN_EXCEPTION_CODE, "未知错误")
         }
     }
 
@@ -51,14 +54,10 @@ class HttpProxy (var builder:HttpRequest.Builder){
         for (con in constructor) {
             val classes = con.parameters
             if (classes.size == 2) {
-                if (classes[0].type.javaType.typeName == Int::class.jvmName && classes[1]
-                        .type.javaType.typeName == String::class.jvmName
-                ) {
-                    try {
-                        return con.call(code, message)
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
+                try {
+                    return con.call(code, message)
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
             }
         }

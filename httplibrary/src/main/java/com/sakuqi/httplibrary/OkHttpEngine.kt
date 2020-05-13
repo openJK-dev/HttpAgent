@@ -1,6 +1,10 @@
 package com.sakuqi.httplibrary;
 
 import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.File
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
@@ -34,8 +38,21 @@ class OkHttpEngine : IHttpEngine {
     override fun createRequest() {
         var requestBody: RequestBody? = null
         if (builder.method === HttpMethod.POST) {
-            builder.body?.let {
-                requestBody = RequestBody.create(null, it.getByteArray())
+            if(builder.body?.file != null){
+                var build = MultipartBody.Builder().setType(MultipartBody.FORM)
+                builder.body?.file!!.forEach { (k, v) ->
+                    build.addFormDataPart("file",v.name,v.asRequestBody("multipart/form-data".toMediaTypeOrNull()))
+                }
+                if(builder.body?.params != null){
+                    builder.body?.params!!.forEach { (t, u) ->
+                        build.addFormDataPart(t,u)
+                    }
+                }
+                requestBody = build.build()
+            }else{
+                if(builder.body?.body!=null){
+                    requestBody = builder.body?.body!!.toRequestBody()
+                }
             }
         }
         val headers = Headers.Builder()
@@ -50,7 +67,7 @@ class OkHttpEngine : IHttpEngine {
             .build()
     }
 
-    override fun execute(): ResponseData {
+    override fun execute(uploadCallback:((current:Long,total:Long)->Unit)?): ResponseData {
         return try {
             call = client!!.newCall(request!!)
             val response = call?.execute()

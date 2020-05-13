@@ -8,5 +8,5 @@ package com.sakuqi.httplibrary
 interface IHttpEngine :HttpRequestCancel{
     fun initConfig(builder:HttpRequest.Builder)
     fun createRequest()
-    fun execute():ResponseData
+    fun execute(uploadCallback:((current:Long,total:Long)->Unit)? = null):ResponseData
 }

@@ -12,12 +12,13 @@ import kotlin.reflect.KClass
 class HttpRequest internal constructor(var builder: Builder) : RequestExecutor {
 
     override fun <T : ResponseData> executeSync(tClass: KClass<T>): T {
-        return HttpProxy(builder).execute(tClass, null)
+        return HttpProxy(builder).execute(tClass, null,null)
     }
 
     override fun <T : ResponseData> executeAsync(
         tClass: KClass<T>,
-        httpCallBack: HttpCallBack<T>
+        httpCallBack: HttpCallBack<T>,
+        uploadCallback:((current:Long,total:Long)->Unit)?
     ): HttpRequestCancel? {
         var httpRequestCancelSub:HttpRequestCancel?=null
         var jobMain: Job? = null
@@ -30,10 +31,14 @@ class HttpRequest internal constructor(var builder: Builder) : RequestExecutor {
             }
         }
         jobIO = GlobalScope.launch(Dispatchers.IO) {
-            delay(5*1000)
-            val result = HttpProxy(builder).execute(tClass) {
+            val result = HttpProxy(builder).execute(tClass, getCancel = {
                 httpRequestCancelSub = it
-            }
+            },uploadCallback = {
+                current, total ->
+                GlobalScope.launch (Dispatchers.Main){
+                    uploadCallback?.invoke(current, total)
+                }
+            })
             jobMain = GlobalScope.launch(Dispatchers.Main) {
                 httpCallBack.onReceivedData(result)
             }

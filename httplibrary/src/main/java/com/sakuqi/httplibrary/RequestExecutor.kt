@@ -10,15 +10,15 @@ import kotlin.reflect.KClass
 interface RequestExecutor {
     fun <T : ResponseData> executeSync(tClass: KClass<T>): T
 
-    fun <T : ResponseData> executeAsync(tClass: KClass<T>, httpCallBack: HttpCallBack<T>):HttpRequestCancel?
+    fun <T : ResponseData> executeAsync(tClass: KClass<T>, httpCallBack: HttpCallBack<T>,uploadCallback:((current:Long,total:Long)->Unit)? = null):HttpRequestCancel?
 }
 
 inline fun <reified T : ResponseData> RequestExecutor.executeSync():T{
     return executeSync(T::class)
 }
 
-inline fun <reified T : ResponseData> RequestExecutor.executeAsync(httpCallBack: HttpCallBack<T>):HttpRequestCancel?{
-    return executeAsync(T::class,httpCallBack)
+inline fun <reified T : ResponseData> RequestExecutor.executeAsync(httpCallBack: HttpCallBack<T>,noinline uploadCallback:((current:Long,total:Long)->Unit)? = null):HttpRequestCancel?{
+    return executeAsync(T::class,httpCallBack,uploadCallback)
 }
 
 interface HttpCallBack<T>{

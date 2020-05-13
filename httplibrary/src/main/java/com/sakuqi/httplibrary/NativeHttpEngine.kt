@@ -23,13 +23,10 @@ class NativeHttpEngine : IHttpEngine {
         this.builder = builder
     }
 
-    override fun createRequest() {
+    override fun execute(uploadCallback: ((current: Long, total: Long) -> Unit)?): ResponseData {
         openConnection()
         commonConfig()
         headerConfig()
-    }
-
-    override fun execute(uploadCallback: ((current: Long, total: Long) -> Unit)?): ResponseData {
         return request(uploadCallback)
     }
 

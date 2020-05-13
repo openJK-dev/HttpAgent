@@ -1,5 +1,6 @@
 package com.sakuqi.httpagent
 
+import android.content.res.AssetManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
@@ -48,8 +49,8 @@ class MainActivity : AppCompatActivity() {
             .setUrl("https://www.example.com")
             .setMethod(HttpMethod.POST)
             //.setBody(HttpBody(mapOf(Pair("keyword","苹果"))))
-            .setBody(HttpBody("{\"keyword\":\"苹果\"}"))
-            //.setBody(HttpBody(mapOf(Pair("hahha","value")), mapOf(Pair("file111",file))))
+            //.setBody(HttpBody("{\"keyword\":\"苹果\"}"))
+            .setBody(HttpBody(mapOf(Pair("hahha","value")), mapOf(Pair("file111",file))))
             .build()
             .executeAsync(object : HttpCallBack<ResponseData> {
                 override fun onReceivedData(result: ResponseData) {

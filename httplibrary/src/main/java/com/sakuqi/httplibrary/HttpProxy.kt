@@ -25,7 +25,6 @@ class HttpProxy(var builder: HttpRequest.Builder) {
         } else if (!builder.url!!.startsWith("http://") and !builder.url!!.startsWith("https://")) {
             return getResponseData(tClass, UNKNOWN_HOST_CODE, "url is error")
         }
-        engine.createRequest()
         getCancel?.invoke(engine)
         val responseData = engine.execute(uploadCallback)
         return if (responseData != null) {

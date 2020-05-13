@@ -35,7 +35,8 @@ class OkHttpEngine : IHttpEngine {
         }
     }
 
-    override fun createRequest() {
+    override fun execute(uploadCallback:((current:Long,total:Long)->Unit)?): ResponseData {
+
         var requestBody: RequestBody? = null
         if (builder.method === HttpMethod.POST) {
             if(builder.body?.file != null){
@@ -49,6 +50,7 @@ class OkHttpEngine : IHttpEngine {
                     }
                 }
                 requestBody = build.build()
+                requestBody = FilRequestBody(requestBody,uploadCallback)
             }else{
                 if(builder.body?.body!=null){
                     requestBody = builder.body?.body!!.toRequestBody()
@@ -65,9 +67,7 @@ class OkHttpEngine : IHttpEngine {
             .method(builder.method.method, requestBody)
             .headers(headers.build())
             .build()
-    }
 
-    override fun execute(uploadCallback:((current:Long,total:Long)->Unit)?): ResponseData {
         return try {
             call = client!!.newCall(request!!)
             val response = call?.execute()

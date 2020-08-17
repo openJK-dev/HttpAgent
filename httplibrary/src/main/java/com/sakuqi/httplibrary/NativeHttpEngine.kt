@@ -1,6 +1,8 @@
 package com.sakuqi.httplibrary
 
+import android.util.Log
 import java.io.*
+import java.lang.IllegalArgumentException
 import java.net.HttpURLConnection
 import java.net.SocketTimeoutException
 import java.net.URL
@@ -65,10 +67,13 @@ class NativeHttpEngine : IHttpEngine {
             builder.header.forEach { (k, v) ->
                 mConnection?.setRequestProperty(k, v)
             }
+            if(builder.isDownFile){
+                mConnection?.setRequestProperty("Accept-Encoding", "identity");
+            }
         }
     }
 
-    private fun request(uploadCallback: ((current: Long, total: Long) -> Unit)? = null): ResponseData {
+    private fun request(progressCallback: ((current: Long, total: Long) -> Unit)? = null): ResponseData {
         if (!connSuccess) {
             //如果连接失败，直接返回相应提示
             return getResponseData(
@@ -89,7 +94,7 @@ class NativeHttpEngine : IHttpEngine {
             }
             when (builder.method) {
                 HttpMethod.POST -> {
-                    doPost(mConnection!!, uploadCallback)
+                    doPost(mConnection!!, progressCallback)
                 }
                 HttpMethod.GET -> {
                     doGet(mConnection!!)
@@ -110,10 +115,36 @@ class NativeHttpEngine : IHttpEngine {
                 }
             } else {
                 inputStream = mConnection!!.inputStream
-                inputStreamReader = InputStreamReader(inputStream, CHARSET)
-                reader = BufferedReader(inputStreamReader)
-                while (reader.readLine().also { tempLine = it } != null) {
-                    resultBuffer.append(tempLine)
+                if (builder.isDownFile) {
+                    if(builder.savePath == null || builder.saveName == null){
+                        throw IllegalArgumentException("下载文件必须设置文件保存路径和文件名称")
+                    }
+                    val buffer = ByteArray(1024)
+                    var len = 0
+                    val bos = ByteArrayOutputStream()
+                    len = inputStream.read(buffer)
+                    val total = mConnection!!.contentLengthLong
+                    var current = len.toLong()
+                    while (len != -1){
+                        bos.write(buffer,0,len)
+                        len = inputStream.read(buffer)
+                        progressCallback?.invoke(current,total)
+                        current +=len
+                    }
+                    bos.close()
+                    val file = File(builder.savePath+File.separator+builder.saveName)
+                    if(!file.parentFile.exists()){
+                        file?.parentFile?.mkdirs()
+                    }
+                    val fos = FileOutputStream(file)
+                    fos.write(bos.toByteArray())
+                    fos.close()
+                } else {
+                    inputStreamReader = InputStreamReader(inputStream, CHARSET)
+                    reader = BufferedReader(inputStreamReader)
+                    while (reader.readLine().also { tempLine = it } != null) {
+                        resultBuffer.append(tempLine)
+                    }
                 }
             }
             responseMessage = resultBuffer.toString()

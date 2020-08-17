@@ -1,6 +1,9 @@
 package com.sakuqi.httplibrary
 
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlin.reflect.KClass
 
 /**
@@ -9,18 +12,19 @@ import kotlin.reflect.KClass
  * description: 网络请求入口
  */
 
-class HttpRequest internal constructor(var builder: Builder) : RequestExecutor {
+typealias ProgressCallback = (current: Long, total: Long) -> Unit
 
+class HttpRequest internal constructor(var builder: Builder) : RequestExecutor {
     override fun <T : ResponseData> executeSync(tClass: KClass<T>): T {
-        return HttpProxy(builder).execute(tClass, null,null)
+        return HttpProxy(builder).execute(tClass, null, null)
     }
 
     override fun <T : ResponseData> executeAsync(
         tClass: KClass<T>,
         httpCallBack: HttpCallBack<T>,
-        uploadCallback:((current:Long,total:Long)->Unit)?
+        progressCallback: ProgressCallback?
     ): HttpRequestCancel? {
-        var httpRequestCancelSub:HttpRequestCancel?=null
+        var httpRequestCancelSub: HttpRequestCancel? = null
         var jobMain: Job? = null
         var jobIO: Job? = null
         var httpRequestCancel: HttpRequestCancel = object : HttpRequestCancel {
@@ -30,20 +34,19 @@ class HttpRequest internal constructor(var builder: Builder) : RequestExecutor {
                 jobIO?.cancel()
             }
         }
-        jobIO = GlobalScope.launch(Dispatchers.IO) {
+        jobIO = CoroutineScope(Dispatchers.IO).launch {
             val result = HttpProxy(builder).execute(tClass, getCancel = {
                 httpRequestCancelSub = it
-            },uploadCallback = {
-                current, total ->
-                GlobalScope.launch (Dispatchers.Main){
-                    uploadCallback?.invoke(current, total)
+            }, uploadCallback = { current, total ->
+                CoroutineScope(Dispatchers.Main).launch {
+                    progressCallback?.invoke(current, total)
                 }
             })
-            jobMain = GlobalScope.launch(Dispatchers.Main) {
+            jobMain = CoroutineScope(Dispatchers.Main).launch {
                 httpCallBack.onReceivedData(result)
             }
         }
-       return httpRequestCancel
+        return httpRequestCancel
     }
 
     companion object {
@@ -59,6 +62,9 @@ class HttpRequest internal constructor(var builder: Builder) : RequestExecutor {
         internal var header: Map<String, String> = mapOf()
         internal var body: HttpBody? = null
         internal var urlParams: Map<String, Any>? = null
+        internal var savePath: String? = null
+        internal var saveName: String? = null
+        internal var isDownFile = false
 
         fun setUrl(url: String): Builder {
             this.url = url
@@ -82,6 +88,13 @@ class HttpRequest internal constructor(var builder: Builder) : RequestExecutor {
 
         fun setUrlParams(urlParams: Map<String, Any>?): Builder {
             this.urlParams = urlParams
+            return this
+        }
+
+        fun setSavePath(savePath: String, saveName: String): Builder {
+            this.saveName = saveName
+            this.savePath = savePath
+            isDownFile = true
             return this
         }
 

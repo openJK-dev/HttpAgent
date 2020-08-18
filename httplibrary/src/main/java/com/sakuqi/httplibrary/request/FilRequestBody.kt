@@ -1,4 +1,4 @@
-package com.sakuqi.httplibrary
+package com.sakuqi.httplibrary.request
 
 import okhttp3.MediaType
 import okhttp3.RequestBody

@@ -1,6 +1,13 @@
-package com.sakuqi.httplibrary
+package com.sakuqi.httplibrary.request
 
 import android.annotation.SuppressLint
+import com.sakuqi.httplibrary.HttpRequest
+import com.sakuqi.httplibrary.HttpRequestCancel
+import com.sakuqi.httplibrary.utils.UNKNOWN_EXCEPTION_CODE
+import com.sakuqi.httplibrary.utils.UNKNOWN_HOST_CODE
+import com.sakuqi.httplibrary.data.ResponseData
+import com.sakuqi.httplibrary.engine.EngineFactory
+import com.sakuqi.httplibrary.engine.IHttpEngine
 import kotlin.reflect.KClass
 
 /**
@@ -21,16 +28,19 @@ class HttpProxy(var builder: HttpRequest.Builder) {
         uploadCallback: ((current: Long, total: Long) -> Unit)? = null
     ): T {
         if (builder.url.isNullOrEmpty()) {
-            return getResponseData(tClass, UNKNOWN_HOST_CODE, "url is null or empty")
+            return getResponseData(tClass,
+                UNKNOWN_HOST_CODE, "url is null or empty")
         } else if (!builder.url!!.startsWith("http://") and !builder.url!!.startsWith("https://")) {
-            return getResponseData(tClass, UNKNOWN_HOST_CODE, "url is error")
+            return getResponseData(tClass,
+                UNKNOWN_HOST_CODE, "url is error")
         }
         getCancel?.invoke(engine)
         val responseData = engine.execute(uploadCallback)
         return if (responseData != null) {
             getResponseData(tClass, responseData.code, responseData.data)
         } else {
-            getResponseData(tClass, UNKNOWN_EXCEPTION_CODE, "未知错误")
+            getResponseData(tClass,
+                UNKNOWN_EXCEPTION_CODE, "未知错误")
         }
     }
 

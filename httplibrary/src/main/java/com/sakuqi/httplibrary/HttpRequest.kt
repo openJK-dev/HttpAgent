@@ -1,5 +1,11 @@
 package com.sakuqi.httplibrary
 
+import com.sakuqi.httplibrary.data.HttpMethod
+import com.sakuqi.httplibrary.data.ResponseData
+import com.sakuqi.httplibrary.request.HttpBody
+import com.sakuqi.httplibrary.request.HttpCallBack
+import com.sakuqi.httplibrary.request.HttpProxy
+import com.sakuqi.httplibrary.request.RequestExecutor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -14,9 +20,11 @@ import kotlin.reflect.KClass
 
 typealias ProgressCallback = (current: Long, total: Long) -> Unit
 
-class HttpRequest internal constructor(var builder: Builder) : RequestExecutor {
+class HttpRequest internal constructor(var builder: Builder) :
+    RequestExecutor {
     override fun <T : ResponseData> executeSync(tClass: KClass<T>): T {
-        return HttpProxy(builder).execute(tClass, null, null)
+        return HttpProxy(builder)
+            .execute(tClass, null, null)
     }
 
     override fun <T : ResponseData> executeAsync(
@@ -35,7 +43,8 @@ class HttpRequest internal constructor(var builder: Builder) : RequestExecutor {
             }
         }
         jobIO = CoroutineScope(Dispatchers.IO).launch {
-            val result = HttpProxy(builder).execute(tClass, getCancel = {
+            val result = HttpProxy(builder)
+                .execute(tClass, getCancel = {
                 httpRequestCancelSub = it
             }, uploadCallback = { current, total ->
                 CoroutineScope(Dispatchers.Main).launch {

@@ -1,4 +1,4 @@
-package com.sakuqi.httplibrary
+package com.sakuqi.httplibrary.data
 
 /**
  * create: by huangDianHua

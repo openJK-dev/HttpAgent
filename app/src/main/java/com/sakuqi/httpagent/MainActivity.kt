@@ -10,6 +10,13 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.sakuqi.httplibrary.*
+import com.sakuqi.httplibrary.data.HttpMethod
+import com.sakuqi.httplibrary.data.ResponseData
+import com.sakuqi.httplibrary.engine.OkHttpEngine
+import com.sakuqi.httplibrary.request.HttpBody
+import com.sakuqi.httplibrary.request.HttpCallBack
+import com.sakuqi.httplibrary.request.executeAsync
+import com.sakuqi.httplibrary.request.executeSync
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.io.File
@@ -35,9 +42,19 @@ class MainActivity : AppCompatActivity() {
             .setMethod(HttpMethod.POST)
             //.setBody(HttpBody(mapOf(Pair("keyword","苹果"))))
             //.setBody(HttpBody("{\"keyword\":\"苹果\"}"))
-            .setBody(HttpBody(mapOf(Pair("hahha", "value")), mapOf(Pair("file111", file))))
+            .setBody(
+                HttpBody(
+                    mapOf(
+                        Pair(
+                            "hahha",
+                            "value"
+                        )
+                    ), mapOf(Pair("file111", file))
+                )
+            )
             .build()
-            .executeAsync(object : HttpCallBack<ResponseData> {
+            .executeAsync(object :
+                HttpCallBack<ResponseData> {
                 override fun onReceivedData(result: ResponseData) {
                     Log.d("TAG", result.toString())
                 }
@@ -54,7 +71,8 @@ class MainActivity : AppCompatActivity() {
             .setMethod(HttpMethod.GET)
             .setSavePath(k,"王教授.apk")
             .build()
-            .executeAsync(object : HttpCallBack<ResponseData> {
+            .executeAsync(object :
+                HttpCallBack<ResponseData> {
                 override fun onReceivedData(result: ResponseData) {
                     Log.d("TAG", result.toString())
                     if(result.code == HttpURLConnection.HTTP_OK){
@@ -96,18 +114,19 @@ class MainActivity : AppCompatActivity() {
         var cancel = HttpRequest.newBuilder()
             .setUrl("https://fanyi.baidu.com/v2transapi?from=zh&to=en")
             .setMethod(HttpMethod.POST)
-            .setBody(HttpBody(params = HashMap<String,String>().apply {
-                put("from","zh")
-                put("to","en")
-                put("query","今天天气真的很好")
-                put("transtype","realtime")
-                put("simple_means_flag","3")
-                put("sign","404035.182642")
-                put("token","a0631086b7d2f78a163c758f9cf")
-                put("domain","common")
+            .setBody(HttpBody(params = HashMap<String, String>().apply {
+                put("from", "zh")
+                put("to", "en")
+                put("query", "今天天气真的很好")
+                put("transtype", "realtime")
+                put("simple_means_flag", "3")
+                put("sign", "404035.182642")
+                put("token", "a0631086b7d2f78a163c758f9cf")
+                put("domain", "common")
             }))
             .build()
-            .executeAsync(object : HttpCallBack<ResponseData> {
+            .executeAsync(object :
+                HttpCallBack<ResponseData> {
                 override fun onReceivedData(result: ResponseData) {
                     Log.d("TAG", result.toString())
                 }

@@ -1,6 +1,10 @@
-package com.sakuqi.httplibrary
+package com.sakuqi.httplibrary.engine
 
-import android.util.Log
+import com.sakuqi.httplibrary.*
+import com.sakuqi.httplibrary.data.HttpMethod
+import com.sakuqi.httplibrary.data.ResponseData
+import com.sakuqi.httplibrary.request.BodyType
+import com.sakuqi.httplibrary.utils.*
 import java.io.*
 import java.lang.IllegalArgumentException
 import java.net.HttpURLConnection
@@ -17,7 +21,8 @@ import javax.activation.MimetypesFileTypeMap
 class NativeHttpEngine : IHttpEngine {
     private var mConnection: HttpURLConnection? = null
     private lateinit var builder: HttpRequest.Builder
-    private var responseCode = UNKNOWN_EXCEPTION_CODE
+    private var responseCode =
+        UNKNOWN_EXCEPTION_CODE
     private var responseMessage = ""
     private var connSuccess = false
 
@@ -57,8 +62,10 @@ class NativeHttpEngine : IHttpEngine {
     private fun commonConfig() {
         if (connSuccess) {
             mConnection?.requestMethod = builder.method.method
-            mConnection?.connectTimeout = RequestConfig.connectTimeout
-            mConnection?.readTimeout = RequestConfig.readTimeout
+            mConnection?.connectTimeout =
+                RequestConfig.connectTimeout
+            mConnection?.readTimeout =
+                RequestConfig.readTimeout
         }
     }
 
@@ -73,7 +80,7 @@ class NativeHttpEngine : IHttpEngine {
         }
     }
 
-    private fun request(progressCallback:ProgressCallback? = null): ResponseData {
+    private fun request(progressCallback: ProgressCallback? = null): ResponseData {
         if (!connSuccess) {
             //如果连接失败，直接返回相应提示
             return getResponseData(
@@ -105,7 +112,9 @@ class NativeHttpEngine : IHttpEngine {
             if (responseCode >= 300) {
                 inputStream = mConnection!!.errorStream
                 if (inputStream != null) {
-                    inputStreamReader = InputStreamReader(inputStream, CHARSET)
+                    inputStreamReader = InputStreamReader(inputStream,
+                        CHARSET
+                    )
                     reader = BufferedReader(inputStreamReader)
                     while (reader.readLine().also { tempLine = it } != null) {
                         resultBuffer.append(tempLine)
@@ -121,7 +130,9 @@ class NativeHttpEngine : IHttpEngine {
                     }
                     writeFileFromNetStream(inputStream,progressCallback)
                 } else {
-                    inputStreamReader = InputStreamReader(inputStream, CHARSET)
+                    inputStreamReader = InputStreamReader(inputStream,
+                        CHARSET
+                    )
                     reader = BufferedReader(inputStreamReader)
                     while (reader.readLine().also { tempLine = it } != null) {
                         resultBuffer.append(tempLine)
@@ -209,7 +220,9 @@ class NativeHttpEngine : IHttpEngine {
         try {
             var paramSB = StringBuffer()
             params.forEach { (k, v) ->
-                paramSB.append(PREFIX).append(BOUNDARY).append(LINE_END)
+                paramSB.append(PREFIX).append(
+                    BOUNDARY
+                ).append(LINE_END)
                 paramSB.append("Content-Disposition: form-data; name=\"")
                     .append(k).append("\"").append(LINE_END)
                 paramSB.append("Content-Type: text/plain; charset=utf-8").append(LINE_END)
@@ -239,7 +252,9 @@ class NativeHttpEngine : IHttpEngine {
             total += it.length()
         }
         file?.forEach { k, v ->
-            stringBuffer.append(PREFIX).append(BOUNDARY).append(LINE_END)
+            stringBuffer.append(PREFIX).append(
+                BOUNDARY
+            ).append(LINE_END)
             stringBuffer.append("Content-Disposition: form-data; name=\"")
                 .append(k).append("\"; filename=\"")
                 .append(v.name)

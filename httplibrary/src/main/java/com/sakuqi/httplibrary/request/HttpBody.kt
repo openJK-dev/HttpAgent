@@ -1,8 +1,6 @@
-package com.sakuqi.httplibrary
+package com.sakuqi.httplibrary.request
 
-import org.json.JSONObject
 import java.io.File
-import java.nio.charset.Charset
 
 /**
  * create: by huangDianHua
@@ -13,7 +11,7 @@ class HttpBody() {
     internal var file: Map<String,File>? = null
     internal var params : Map<String,String>? = null
     internal var body:String? = null
-    internal var type:BodyType? = null
+    internal var type: BodyType? = null
 
     constructor(file: Map<String,File>) : this() {
         this.file = file

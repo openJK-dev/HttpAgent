@@ -1,5 +1,11 @@
-package com.sakuqi.httplibrary;
+package com.sakuqi.httplibrary.engine;
 
+import com.sakuqi.httplibrary.*
+import com.sakuqi.httplibrary.data.HttpMethod
+import com.sakuqi.httplibrary.data.ResponseData
+import com.sakuqi.httplibrary.request.FilRequestBody
+import com.sakuqi.httplibrary.utils.RequestConfig
+import com.sakuqi.httplibrary.utils.UNKNOWN_EXCEPTION_CODE
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.asRequestBody
@@ -53,7 +59,10 @@ class OkHttpEngine : IHttpEngine {
                     }
                 }
                 requestBody = build.build()
-                requestBody = FilRequestBody(requestBody, progressCallback)
+                requestBody = FilRequestBody(
+                    requestBody,
+                    progressCallback
+                )
             } else if (builder.body?.params != null) {
                 var build = MultipartBody.Builder().setType(MultipartBody.FORM)
                 if (builder.body?.params != null) {
@@ -90,10 +99,16 @@ class OkHttpEngine : IHttpEngine {
                     string = responseBody.string()
                 }
             }
-            ResponseData(response?.code ?: UNKNOWN_EXCEPTION_CODE, string)
+            ResponseData(
+                response?.code ?: UNKNOWN_EXCEPTION_CODE,
+                string
+            )
         } catch (e: IOException) {
             e.printStackTrace()
-            ResponseData(UNKNOWN_EXCEPTION_CODE, e.message ?: "")
+            ResponseData(
+                UNKNOWN_EXCEPTION_CODE,
+                e.message ?: ""
+            )
         }
     }
 

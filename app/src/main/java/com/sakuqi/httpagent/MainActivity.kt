@@ -6,12 +6,14 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.ProgressBar
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.sakuqi.httplibrary.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.io.File
+import java.net.HttpURLConnection
 
 class MainActivity : AppCompatActivity() {
 
@@ -48,13 +50,16 @@ class MainActivity : AppCompatActivity() {
         var k = Environment.getExternalStorageDirectory().absolutePath.toString()
         val progressBar = showProgressDialog("下载进度")
         HttpRequest.newBuilder()
-            .setUrl("https://github.com/AndroidHdh/HttpAgent/archive/master.zip")
+            .setUrl("https://www.wandoujia.com/apps/7965171/download/dot?ch=detail_normal_dl")
             .setMethod(HttpMethod.GET)
-            .setSavePath(k,"HttpAgent.zip")
+            .setSavePath(k,"王教授.apk")
             .build()
             .executeAsync(object : HttpCallBack<ResponseData> {
                 override fun onReceivedData(result: ResponseData) {
                     Log.d("TAG", result.toString())
+                    if(result.code == HttpURLConnection.HTTP_OK){
+                        Toast.makeText(this@MainActivity,"下载成功",Toast.LENGTH_LONG).show()
+                    }
                 }
             }) { current, total ->
                 Log.d("HttpAgent", "current = $current,total = $total")

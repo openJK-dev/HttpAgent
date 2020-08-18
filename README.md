@@ -1,5 +1,6 @@
 # HttpAgent
-Android 网络请求框架，可以自定义网络引擎，支持 GET、POST、文件上传，可以监听文件上传进度
+Android 网络请求框架，可以自定义网络引擎，支持 GET、POST、文件上传、文件下载，可以监听文件下载上传进度。本库内部基于 OkHttp 和
+HttpUrlConnection 实现了两套网络请求逻辑，使用者可以根据自己的需要使用其中的某一种类型，或者自己按提供的接口自行实现。
 
 
 ## 使用方法
@@ -67,5 +68,29 @@ var k = Environment.getExternalStorageDirectory().absolutePath.toString()
                 }
             }) { current, total ->
                 Log.d("HttpAgent", "current = $current,total = $total")
+            }
+```
+
+### 6、下载文件，监听下载进度
+```kotlin
+var k = Environment.getExternalStorageDirectory().absolutePath.toString()
+        val progressBar = showProgressDialog("下载进度")
+        HttpRequest.newBuilder()
+            .setUrl("https://www.wandoujia.com/apps/7965171/download/dot?ch=detail_normal_dl")
+            .setMethod(HttpMethod.GET)
+            .setSavePath(k,"王教授.apk")
+            .build()
+            .executeAsync(object :
+                HttpCallBack<ResponseData> {
+                override fun onReceivedData(result: ResponseData) {
+                    Log.d("TAG", result.toString())
+                    if(result.code == HttpURLConnection.HTTP_OK){
+                        Toast.makeText(this@MainActivity,"下载成功",Toast.LENGTH_LONG).show()
+                    }
+                }
+            }) { current, total ->
+                Log.d("HttpAgent", "current = $current,total = $total")
+                val current = (current.toInt()/total.toDouble())*100
+                progressBar.setProgress(current.toInt(),true)
             }
 ```

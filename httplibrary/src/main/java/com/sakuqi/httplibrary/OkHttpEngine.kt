@@ -4,8 +4,7 @@ import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.io.File
-import java.io.IOException
+import java.io.*
 import java.util.concurrent.TimeUnit
 
 /**
@@ -35,27 +34,38 @@ class OkHttpEngine : IHttpEngine {
         }
     }
 
-    override fun execute(uploadCallback:((current:Long,total:Long)->Unit)?): ResponseData {
+    override fun execute(progressCallback: ProgressCallback?): ResponseData {
 
         var requestBody: RequestBody? = null
         if (builder.method === HttpMethod.POST) {
-            if(builder.body?.file != null){
+            if (builder.body?.file != null) {
                 var build = MultipartBody.Builder().setType(MultipartBody.FORM)
                 builder.body?.file!!.forEach { (k, v) ->
-                    build.addFormDataPart("file",v.name,v.asRequestBody("multipart/form-data".toMediaTypeOrNull()))
+                    build.addFormDataPart(
+                        "file",
+                        v.name,
+                        v.asRequestBody("multipart/form-data".toMediaTypeOrNull())
+                    )
                 }
-                if(builder.body?.params != null){
+                if (builder.body?.params != null) {
                     builder.body?.params!!.forEach { (t, u) ->
-                        build.addFormDataPart(t,u)
+                        build.addFormDataPart(t, u)
                     }
                 }
                 requestBody = build.build()
-                requestBody = FilRequestBody(requestBody,uploadCallback)
-            }else{
-                if(builder.body?.body!=null){
-                    requestBody = builder.body?.body!!.toRequestBody()
+                requestBody = FilRequestBody(requestBody, progressCallback)
+            } else if (builder.body?.params != null) {
+                var build = MultipartBody.Builder().setType(MultipartBody.FORM)
+                if (builder.body?.params != null) {
+                    builder.body?.params!!.forEach { (t, u) ->
+                        build.addFormDataPart(t, u)
+                    }
                 }
+                requestBody = build.build()
+            } else if (builder.body?.body != null) {
+                requestBody = builder.body?.body!!.toRequestBody()
             }
+
         }
         val headers = Headers.Builder()
         val hashMap: Map<String, String> = builder.header
@@ -74,12 +84,46 @@ class OkHttpEngine : IHttpEngine {
             val responseBody = response?.body
             var string = ""
             if (responseBody != null) {
-                string = responseBody.string()
+                if (builder.isDownFile) {
+                    writeFileFromNetStream(response, progressCallback)
+                } else {
+                    string = responseBody.string()
+                }
             }
             ResponseData(response?.code ?: UNKNOWN_EXCEPTION_CODE, string)
         } catch (e: IOException) {
             e.printStackTrace()
             ResponseData(UNKNOWN_EXCEPTION_CODE, e.message ?: "")
+        }
+    }
+
+    private fun writeFileFromNetStream(response: Response?, progressCallback: ProgressCallback?) {
+        val requestBody = response?.body ?: return
+        val inputStream = requestBody.byteStream()
+        val buffer = ByteArray(1024)
+        var len = 0
+        val bos = ByteArrayOutputStream()
+        len = inputStream.read(buffer)
+        val total = requestBody.contentLength()
+        var current = len.toLong()
+        while (len != -1) {
+            bos.write(buffer, 0, len)
+            len = inputStream.read(buffer)
+            progressCallback?.invoke(current, total)
+            current += len
+        }
+        bos.close()
+        if (builder.savePath != null) {
+            val file = File(builder.savePath!!)
+            if (!file.exists()) {
+                file.mkdirs()
+            }
+            if (builder.saveName != null) {
+                val file = File(builder.savePath + File.separator + builder.saveName)
+                val fos = FileOutputStream(file)
+                fos.write(bos.toByteArray())
+                fos.close()
+            }
         }
     }
 

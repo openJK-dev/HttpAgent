@@ -19,28 +19,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         HttpAgentClient.newBuilder()
-            .setAgent(NativeHttpEngine::class.java)
+            .setAgent(OkHttpEngine::class.java)
             .setConnectTimeOut(10000)
             .setReadTimeOut(10000)
             .build()
-
-        GlobalScope.launch {
-            val result = HttpRequest.newBuilder()
-                .setUrl("http://www.baidu.com")
-                .setMethod(HttpMethod.GET)
-                .build()
-                .executeSync<ResponseData>()
-            Log.d("TAG", result.toString())
-        }
-        var cancel = HttpRequest.newBuilder()
-            .setUrl("http://www.baidu.com")
-            .setMethod(HttpMethod.GET)
-            .build()
-            .executeAsync(object : HttpCallBack<ResponseData> {
-                override fun onReceivedData(result: ResponseData) {
-                    Log.d("TAG", result.toString())
-                }
-            })
     }
 
     fun loadNet(view: View) {
@@ -76,8 +58,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }) { current, total ->
                 Log.d("HttpAgent", "current = $current,total = $total")
-                Log.w("HttpAgent","currentThread:"+Thread.currentThread().name)
-                val current = (current.toInt()/202779.0)*100
+                val current = (current.toInt()/total.toDouble())*100
                 progressBar.setProgress(current.toInt(),true)
             }
     }
@@ -94,5 +75,37 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+    }
+
+    fun downGet(view: View) {
+        GlobalScope.launch {
+            val result = HttpRequest.newBuilder()
+                .setUrl("http://www.baidu.com")
+                .setMethod(HttpMethod.GET)
+                .build()
+                .executeSync<ResponseData>()
+            Log.d("TAG", result.toString())
+        }
+    }
+    fun downPost(view: View) {
+        var cancel = HttpRequest.newBuilder()
+            .setUrl("https://fanyi.baidu.com/v2transapi?from=zh&to=en")
+            .setMethod(HttpMethod.POST)
+            .setBody(HttpBody(params = HashMap<String,String>().apply {
+                put("from","zh")
+                put("to","en")
+                put("query","今天天气真的很好")
+                put("transtype","realtime")
+                put("simple_means_flag","3")
+                put("sign","404035.182642")
+                put("token","a0631086b7d2f78a163c758f9cf")
+                put("domain","common")
+            }))
+            .build()
+            .executeAsync(object : HttpCallBack<ResponseData> {
+                override fun onReceivedData(result: ResponseData) {
+                    Log.d("TAG", result.toString())
+                }
+            })
     }
 }

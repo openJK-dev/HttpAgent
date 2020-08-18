@@ -73,7 +73,7 @@ class NativeHttpEngine : IHttpEngine {
         }
     }
 
-    private fun request(progressCallback: ((current: Long, total: Long) -> Unit)? = null): ResponseData {
+    private fun request(progressCallback:ProgressCallback? = null): ResponseData {
         if (!connSuccess) {
             //如果连接失败，直接返回相应提示
             return getResponseData(
@@ -119,26 +119,7 @@ class NativeHttpEngine : IHttpEngine {
                     if(builder.savePath == null || builder.saveName == null){
                         throw IllegalArgumentException("下载文件必须设置文件保存路径和文件名称")
                     }
-                    val buffer = ByteArray(1024)
-                    var len = 0
-                    val bos = ByteArrayOutputStream()
-                    len = inputStream.read(buffer)
-                    val total = mConnection!!.contentLengthLong
-                    var current = len.toLong()
-                    while (len != -1){
-                        bos.write(buffer,0,len)
-                        len = inputStream.read(buffer)
-                        progressCallback?.invoke(current,total)
-                        current +=len
-                    }
-                    bos.close()
-                    val file = File(builder.savePath+File.separator+builder.saveName)
-                    if(!file.parentFile.exists()){
-                        file?.parentFile?.mkdirs()
-                    }
-                    val fos = FileOutputStream(file)
-                    fos.write(bos.toByteArray())
-                    fos.close()
+                    writeFileFromNetStream(inputStream,progressCallback)
                 } else {
                     inputStreamReader = InputStreamReader(inputStream, CHARSET)
                     reader = BufferedReader(inputStreamReader)
@@ -283,6 +264,34 @@ class NativeHttpEngine : IHttpEngine {
             }
             outputStream.write(LINE_END.toByteArray())
             fileInput.close()
+        }
+    }
+
+    private fun writeFileFromNetStream(inputStream: InputStream,progressCallback: ProgressCallback?){
+        val buffer = ByteArray(1024)
+        var len = 0
+        val bos = ByteArrayOutputStream()
+        len = inputStream.read(buffer)
+        val total = mConnection!!.contentLengthLong
+        var current = len.toLong()
+        while (len != -1){
+            bos.write(buffer,0,len)
+            len = inputStream.read(buffer)
+            progressCallback?.invoke(current,total)
+            current +=len
+        }
+        bos.close()
+        if(builder.savePath != null) {
+            val file = File(builder.savePath!!)
+            if (!file.exists()) {
+                file.mkdirs()
+            }
+            if(builder.saveName != null) {
+                val file = File(builder.savePath + File.separator + builder.saveName)
+                val fos = FileOutputStream(file)
+                fos.write(bos.toByteArray())
+                fos.close()
+            }
         }
     }
 

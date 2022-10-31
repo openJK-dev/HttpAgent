@@ -5,6 +5,7 @@ import com.sakuqi.httplibrary.data.HttpMethod
 import com.sakuqi.httplibrary.data.ResponseData
 import com.sakuqi.httplibrary.request.FilRequestBody
 import com.sakuqi.httplibrary.utils.RequestConfig
+import com.sakuqi.httplibrary.utils.SslHandler
 import com.sakuqi.httplibrary.utils.UNKNOWN_EXCEPTION_CODE
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -27,7 +28,7 @@ class OkHttpEngine : IHttpEngine {
     override fun initConfig(httpBuilder: HttpRequest.Builder) {
         this.builder = httpBuilder
         if (client == null) {
-            client = OkHttpClient.Builder()
+            val build = OkHttpClient.Builder()
                 .connectTimeout(
                     RequestConfig.connectTimeout.toLong(),
                     TimeUnit.MILLISECONDS
@@ -36,7 +37,9 @@ class OkHttpEngine : IHttpEngine {
                     RequestConfig.readTimeout.toLong(),
                     TimeUnit.MILLISECONDS
                 )
-                .build()
+            val sslParams = SslHandler.getSslSocketFactory(null,null,null)
+            build.sslSocketFactory(sslParams.sSLSocketFactory,sslParams.trustManager)
+            client = build.build()
         }
     }
 
@@ -115,31 +118,32 @@ class OkHttpEngine : IHttpEngine {
     private fun writeFileFromNetStream(response: Response?, progressCallback: ProgressCallback?) {
         val requestBody = response?.body ?: return
         val inputStream = requestBody.byteStream()
-        val buffer = ByteArray(1024)
-        var len = 0
-        val bos = ByteArrayOutputStream()
-        len = inputStream.read(buffer)
-        val total = requestBody.contentLength()
-        var current = len.toLong()
-        while (len != -1) {
-            bos.write(buffer, 0, len)
-            len = inputStream.read(buffer)
-            progressCallback?.invoke(current, total)
-            current += len
-        }
-        bos.close()
-        if (builder.savePath != null) {
+        var fos:FileOutputStream?=null
+        if(builder.savePath != null) {
             val file = File(builder.savePath!!)
             if (!file.exists()) {
                 file.mkdirs()
             }
-            if (builder.saveName != null) {
+            if(builder.saveName != null) {
                 val file = File(builder.savePath + File.separator + builder.saveName)
-                val fos = FileOutputStream(file)
-                fos.write(bos.toByteArray())
-                fos.close()
+                fos = FileOutputStream(file)
             }
         }
+
+        val buffer = ByteArray(1024)
+        var len = 0
+        //val bos = ByteArrayOutputStream()
+        len = inputStream.read(buffer)
+        val total = requestBody.contentLength()
+        var current = len.toLong()
+        while (len != -1){
+            fos?.write(buffer)
+            progressCallback?.invoke(current,total)
+            len = inputStream.read(buffer)
+            current +=len
+        }
+        fos?.close()
+        inputStream.close()
     }
 
     override fun cancel() {

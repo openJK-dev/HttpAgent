@@ -5,6 +5,7 @@
     <!--   HTTPS 信任证书-->
     <debug-overrides>
         <trust-anchors>
+            <certificates src="system"/>
             <!-- Trust user added CAs while debuggable only -->
             <certificates src="user" />
         </trust-anchors>

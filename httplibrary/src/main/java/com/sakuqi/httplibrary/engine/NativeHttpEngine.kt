@@ -10,6 +10,7 @@ import java.lang.IllegalArgumentException
 import java.net.HttpURLConnection
 import java.net.SocketTimeoutException
 import java.net.URL
+import java.nio.channels.FileChannel
 import java.util.*
 import javax.activation.MimetypesFileTypeMap
 
@@ -283,19 +284,7 @@ class NativeHttpEngine : IHttpEngine {
     }
 
     private fun writeFileFromNetStream(inputStream: InputStream,progressCallback: ProgressCallback?){
-        val buffer = ByteArray(1024)
-        var len = 0
-        val bos = ByteArrayOutputStream()
-        len = inputStream.read(buffer)
-        val total = mConnection!!.contentLengthLong
-        var current = len.toLong()
-        while (len != -1){
-            bos.write(buffer,0,len)
-            len = inputStream.read(buffer)
-            progressCallback?.invoke(current,total)
-            current +=len
-        }
-        bos.close()
+        var fos:FileOutputStream?=null
         if(builder.savePath != null) {
             val file = File(builder.savePath!!)
             if (!file.exists()) {
@@ -303,11 +292,24 @@ class NativeHttpEngine : IHttpEngine {
             }
             if(builder.saveName != null) {
                 val file = File(builder.savePath + File.separator + builder.saveName)
-                val fos = FileOutputStream(file)
-                fos.write(bos.toByteArray())
-                fos.close()
+                fos = FileOutputStream(file)
             }
         }
+
+        val buffer = ByteArray(1024)
+        var len = 0
+        //val bos = ByteArrayOutputStream()
+        len = inputStream.read(buffer)
+        val total = mConnection!!.contentLengthLong
+        var current = len.toLong()
+        while (len != -1){
+            fos?.write(buffer)
+            progressCallback?.invoke(current,total)
+            len = inputStream.read(buffer)
+            current +=len
+        }
+        fos?.close()
+        inputStream.close()
     }
 
     private fun getContentType(file: File): String {

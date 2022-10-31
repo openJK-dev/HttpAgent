@@ -64,30 +64,30 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun downNet(view: View) {
-        var k = Environment.getExternalStorageDirectory().absolutePath.toString()
+        var k = cacheDir.absolutePath+File.separator+"apk"
         val progressBar = showProgressDialog("下载进度")
         HttpRequest.newBuilder()
-            .setUrl("https://www.wandoujia.com/apps/7965171/download/dot?ch=detail_normal_dl")
+            .setUrl("https://fanyi-app.baidu.com/transapp/appdownloadpage?appchannel=webright")
             .setMethod(HttpMethod.GET)
-            .setSavePath(k,"王教授.apk")
+            .setSavePath(k, "百度翻译.apk")
             .build()
             .executeAsync(object :
                 HttpCallBack<ResponseData> {
                 override fun onReceivedData(result: ResponseData) {
                     Log.d("TAG", result.toString())
-                    if(result.code == HttpURLConnection.HTTP_OK){
-                        Toast.makeText(this@MainActivity,"下载成功",Toast.LENGTH_LONG).show()
+                    if (result.code == HttpURLConnection.HTTP_OK) {
+                        Toast.makeText(this@MainActivity, "下载成功", Toast.LENGTH_LONG).show()
                     }
                 }
             }) { current, total ->
                 Log.d("HttpAgent", "current = $current,total = $total")
-                val current = (current.toInt()/total.toDouble())*100
-                progressBar.setProgress(current.toInt(),true)
+                val current = (current.toInt() / total.toDouble()) * 100
+                progressBar.setProgress(current.toInt(), true)
             }
     }
 
-    fun showProgressDialog(title:String):ProgressBar{
-        val view = LayoutInflater.from(this).inflate(R.layout.dialog_view,null,false)
+    fun showProgressDialog(title: String): ProgressBar {
+        val view = LayoutInflater.from(this).inflate(R.layout.dialog_view, null, false)
         val dialog = AlertDialog.Builder(this)
             .setTitle(title)
             .setView(view)
@@ -110,6 +110,7 @@ class MainActivity : AppCompatActivity() {
             Log.d("TAG", result.toString())
         }
     }
+
     fun downPost(view: View) {
         var cancel = HttpRequest.newBuilder()
             .setUrl("https://fanyi.baidu.com/v2transapi?from=zh&to=en")

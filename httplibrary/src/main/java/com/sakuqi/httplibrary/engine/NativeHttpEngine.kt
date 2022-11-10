@@ -31,7 +31,7 @@ class NativeHttpEngine : IHttpEngine {
         this.builder = builder
     }
 
-    override fun execute(uploadCallback: ((current: Long, total: Long) -> Unit)?): ResponseData {
+    override fun execute(uploadCallback:ProgressCallback?): ResponseData {
         openConnection()
         commonConfig()
         headerConfig()
@@ -168,7 +168,7 @@ class NativeHttpEngine : IHttpEngine {
 
     private fun doPost(
         connection: HttpURLConnection,
-        uploadCallback: ((current: Long, total: Long) -> Unit)? = null
+        uploadCallback: ProgressCallback? = null
     ) {
         connection.apply {
             doOutput = true
@@ -243,7 +243,7 @@ class NativeHttpEngine : IHttpEngine {
      */
     private fun writeFile(
         outputStream: OutputStream,
-        uploadCallback: ((current: Long, total: Long) -> Unit)? = null
+        uploadCallback: ProgressCallback? = null
     ) {
         var total = 0L
         var current = 0L
@@ -275,7 +275,7 @@ class NativeHttpEngine : IHttpEngine {
             while (length != -1) {
                 outputStream.write(buffer, 0, length)
                 current += length
-                uploadCallback?.invoke(current, total)
+                uploadCallback?.onProgress((current*100f/total).toInt())
                 length = fileInput.read(buffer)
             }
             outputStream.write(LINE_END.toByteArray())
@@ -284,32 +284,35 @@ class NativeHttpEngine : IHttpEngine {
     }
 
     private fun writeFileFromNetStream(inputStream: InputStream,progressCallback: ProgressCallback?){
-        var fos:FileOutputStream?=null
-        if(builder.savePath != null) {
-            val file = File(builder.savePath!!)
-            if (!file.exists()) {
-                file.mkdirs()
+        var file: File? = null
+        if (builder.savePath != null) {
+            val filePath = File(builder.savePath!!)
+            if (!filePath.exists()) {
+                filePath.mkdirs()
             }
-            if(builder.saveName != null) {
-                val file = File(builder.savePath + File.separator + builder.saveName)
-                fos = FileOutputStream(file)
+            if (builder.saveName != null) {
+                file = File(builder.savePath + File.separator + builder.saveName)
             }
         }
 
-        val buffer = ByteArray(1024)
+        val buf = ByteArray(2048)
         var len = 0
-        //val bos = ByteArrayOutputStream()
-        len = inputStream.read(buffer)
-        val total = mConnection!!.contentLengthLong
-        var current = len.toLong()
-        while (len != -1){
-            fos?.write(buffer)
-            progressCallback?.invoke(current,total)
-            len = inputStream.read(buffer)
-            current +=len
+        val total = mConnection?.contentLength ?: 1
+        var current = 0L
+        var fos = FileOutputStream(file)
+        len = inputStream.read(buf) ?: -1
+        while (len != -1) {
+            current += len
+            fos.write(buf, 0, len)
+            val progress = current * 100f / total
+            if (progress <= 100) {
+                progressCallback?.onProgress(progress.toInt())
+            }
+            len = inputStream.read(buf) ?: -1
         }
-        fos?.close()
+        fos.flush()
         inputStream.close()
+        fos.close()
     }
 
     private fun getContentType(file: File): String {

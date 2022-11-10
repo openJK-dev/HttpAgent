@@ -17,9 +17,6 @@ import kotlin.reflect.KClass
  * time: 2020/5/8 14:43:49
  * description: 网络请求入口
  */
-
-typealias ProgressCallback = (current: Long, total: Long) -> Unit
-
 class HttpRequest internal constructor(var builder: Builder) :
     RequestExecutor {
     override fun <T : ResponseData> executeSync(tClass: KClass<T>): T {
@@ -45,12 +42,14 @@ class HttpRequest internal constructor(var builder: Builder) :
         jobIO = CoroutineScope(Dispatchers.IO).launch {
             val result = HttpProxy(builder)
                 .execute(tClass, getCancel = {
-                httpRequestCancelSub = it
-            }, uploadCallback = { current, total ->
-                CoroutineScope(Dispatchers.Main).launch {
-                    progressCallback?.invoke(current, total)
-                }
-            })
+                    httpRequestCancelSub = it
+                }, object : ProgressCallback {
+                    override fun onProgress(progress: Int) {
+                        CoroutineScope(Dispatchers.Main).launch {
+                            progressCallback?.onProgress(progress)
+                        }
+                    }
+                })
             jobMain = CoroutineScope(Dispatchers.Main).launch {
                 httpCallBack.onReceivedData(result)
             }

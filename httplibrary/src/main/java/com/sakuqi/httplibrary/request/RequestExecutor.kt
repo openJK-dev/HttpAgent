@@ -1,6 +1,7 @@
 package com.sakuqi.httplibrary.request
 
 import com.sakuqi.httplibrary.HttpRequestCancel
+import com.sakuqi.httplibrary.ProgressCallback
 import com.sakuqi.httplibrary.data.ResponseData
 import kotlin.reflect.KClass
 
@@ -12,14 +13,14 @@ import kotlin.reflect.KClass
 interface RequestExecutor {
     fun <T : ResponseData> executeSync(tClass: KClass<T>): T
 
-    fun <T : ResponseData> executeAsync(tClass: KClass<T>, httpCallBack: HttpCallBack<T>, uploadCallback:((current:Long, total:Long)->Unit)? = null): HttpRequestCancel?
+    fun <T : ResponseData> executeAsync(tClass: KClass<T>, httpCallBack: HttpCallBack<T>, uploadCallback:ProgressCallback? = null): HttpRequestCancel?
 }
 
 inline fun <reified T : ResponseData> RequestExecutor.executeSync():T{
     return executeSync(T::class)
 }
 
-inline fun <reified T : ResponseData> RequestExecutor.executeAsync(httpCallBack: HttpCallBack<T>, noinline uploadCallback:((current:Long, total:Long)->Unit)? = null): HttpRequestCancel?{
+inline fun <reified T : ResponseData> RequestExecutor.executeAsync(httpCallBack: HttpCallBack<T>, uploadCallback:ProgressCallback? = null): HttpRequestCancel?{
     return executeAsync(T::class,httpCallBack,uploadCallback)
 }
 

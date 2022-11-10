@@ -21,6 +21,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.io.File
 import java.net.HttpURLConnection
+import java.net.Proxy
 
 class MainActivity : AppCompatActivity() {
 
@@ -58,9 +59,11 @@ class MainActivity : AppCompatActivity() {
                 override fun onReceivedData(result: ResponseData) {
                     Log.d("TAG", result.toString())
                 }
-            }) { current, total ->
-                Log.d("HttpAgent", "current = $current,total = $total")
-            }
+            },object :ProgressCallback{
+                override fun onProgress(progress: Int) {
+
+                }
+            })
     }
 
     fun downNet(view: View) {
@@ -69,7 +72,7 @@ class MainActivity : AppCompatActivity() {
         HttpRequest.newBuilder()
             .setUrl("https://fanyi-app.baidu.com/transapp/appdownloadpage?appchannel=webright")
             .setMethod(HttpMethod.GET)
-            .setSavePath(k, "百度翻译.apk")
+            .setSavePath(k, "simple-manager-debug.apk")
             .build()
             .executeAsync(object :
                 HttpCallBack<ResponseData> {
@@ -79,11 +82,13 @@ class MainActivity : AppCompatActivity() {
                         Toast.makeText(this@MainActivity, "下载成功", Toast.LENGTH_LONG).show()
                     }
                 }
-            }) { current, total ->
-                Log.d("HttpAgent", "current = $current,total = $total")
-                val current = (current.toInt() / total.toDouble()) * 100
-                progressBar.setProgress(current.toInt(), true)
-            }
+            },object :ProgressCallback{
+                override fun onProgress(progress: Int) {
+                    Log.d("HttpAgent", "progress = $progress")
+                    val current = progress
+                    progressBar.setProgress(current.toInt(), true)
+                }
+            })
     }
 
     fun showProgressDialog(title: String): ProgressBar {

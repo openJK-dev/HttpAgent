@@ -1,5 +1,6 @@
 package com.sakuqi.httplibrary.engine
 
+import com.sakuqi.httplibrary.ProgressCallback
 import com.sakuqi.httplibrary.HttpRequest
 import com.sakuqi.httplibrary.HttpRequestCancel
 import com.sakuqi.httplibrary.data.ResponseData
@@ -11,5 +12,5 @@ import com.sakuqi.httplibrary.data.ResponseData
  */
 interface IHttpEngine : HttpRequestCancel {
     fun initConfig(builder: HttpRequest.Builder)
-    fun execute(uploadCallback:((current:Long,total:Long)->Unit)? = null): ResponseData
+    fun execute(callback: ProgressCallback?): ResponseData
 }

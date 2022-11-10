@@ -1,6 +1,7 @@
 package com.sakuqi.httplibrary.request
 
 import android.annotation.SuppressLint
+import com.sakuqi.httplibrary.ProgressCallback
 import com.sakuqi.httplibrary.HttpRequest
 import com.sakuqi.httplibrary.HttpRequestCancel
 import com.sakuqi.httplibrary.utils.UNKNOWN_EXCEPTION_CODE
@@ -25,7 +26,7 @@ class HttpProxy(var builder: HttpRequest.Builder) {
     fun <T : ResponseData> execute(
         tClass: KClass<T>,
         getCancel: ((HttpRequestCancel) -> Unit)?,
-        uploadCallback: ((current: Long, total: Long) -> Unit)? = null
+        uploadCallback: ProgressCallback? = null
     ): T {
         if (builder.url.isNullOrEmpty()) {
             return getResponseData(tClass,

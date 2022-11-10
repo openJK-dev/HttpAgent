@@ -1,5 +1,6 @@
 package com.sakuqi.httplibrary.request
 
+import com.sakuqi.httplibrary.ProgressCallback
 import okhttp3.MediaType
 import okhttp3.RequestBody
 import okio.*
@@ -9,7 +10,7 @@ import okio.*
  * time: 2020/5/13 18:34:48
  * description:
  */
-class FilRequestBody(private val mRequestBody: RequestBody, val uploadCallback:((current:Long, total:Long)->Unit)?) :RequestBody(){
+class FilRequestBody(private val mRequestBody: RequestBody, val uploadCallback:ProgressCallback?) :RequestBody(){
     private var mContentLength = 0L
 
     override fun contentLength(): Long {
@@ -40,7 +41,7 @@ class FilRequestBody(private val mRequestBody: RequestBody, val uploadCallback:(
         override fun write(source: Buffer, byteCount: Long) {
             super.write(source, byteCount)
             mByteLength += byteCount
-            uploadCallback?.invoke(mByteLength,contentLength())
+            uploadCallback?.onProgress((mByteLength*1f/contentLength()).toInt())
         }
     }
 }

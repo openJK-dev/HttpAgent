@@ -1,6 +1,7 @@
 package com.sakuqi.httplibrary.engine;
 
-import com.sakuqi.httplibrary.*
+import com.sakuqi.httplibrary.ProgressCallback
+import com.sakuqi.httplibrary.HttpRequest
 import com.sakuqi.httplibrary.data.HttpMethod
 import com.sakuqi.httplibrary.data.ResponseData
 import com.sakuqi.httplibrary.request.FilRequestBody
@@ -11,7 +12,9 @@ import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.io.*
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 /**
@@ -37,13 +40,13 @@ class OkHttpEngine : IHttpEngine {
                     RequestConfig.readTimeout.toLong(),
                     TimeUnit.MILLISECONDS
                 )
-            val sslParams = SslHandler.getSslSocketFactory(null,null,null)
-            build.sslSocketFactory(sslParams.sSLSocketFactory,sslParams.trustManager)
+            val sslParams = SslHandler.getSslSocketFactory(null, null, null)
+            build.sslSocketFactory(sslParams.sSLSocketFactory, sslParams.trustManager)
             client = build.build()
         }
     }
 
-    override fun execute(progressCallback: ProgressCallback?): ResponseData {
+    override fun execute(callback: ProgressCallback?): ResponseData {
 
         var requestBody: RequestBody? = null
         if (builder.method === HttpMethod.POST) {
@@ -64,7 +67,7 @@ class OkHttpEngine : IHttpEngine {
                 requestBody = build.build()
                 requestBody = FilRequestBody(
                     requestBody,
-                    progressCallback
+                    callback
                 )
             } else if (builder.body?.params != null) {
                 var build = MultipartBody.Builder().setType(MultipartBody.FORM)
@@ -97,7 +100,7 @@ class OkHttpEngine : IHttpEngine {
             var string = ""
             if (responseBody != null) {
                 if (builder.isDownFile) {
-                    writeFileFromNetStream(response, progressCallback)
+                    writeFileFromNetStream(response, callback)
                 } else {
                     string = responseBody.string()
                 }
@@ -115,35 +118,37 @@ class OkHttpEngine : IHttpEngine {
         }
     }
 
-    private fun writeFileFromNetStream(response: Response?, progressCallback: ProgressCallback?) {
-        val requestBody = response?.body ?: return
-        val inputStream = requestBody.byteStream()
-        var fos:FileOutputStream?=null
-        if(builder.savePath != null) {
-            val file = File(builder.savePath!!)
-            if (!file.exists()) {
-                file.mkdirs()
+    private fun writeFileFromNetStream(response: Response, callback: ProgressCallback?) {
+        var file: File? = null
+        if (builder.savePath != null) {
+            val filePath = File(builder.savePath!!)
+            if (!filePath.exists()) {
+                filePath.mkdirs()
             }
-            if(builder.saveName != null) {
-                val file = File(builder.savePath + File.separator + builder.saveName)
-                fos = FileOutputStream(file)
+            if (builder.saveName != null) {
+                file = File(builder.savePath + File.separator + builder.saveName)
             }
         }
 
-        val buffer = ByteArray(1024)
+        val buf = ByteArray(2048)
         var len = 0
-        //val bos = ByteArrayOutputStream()
-        len = inputStream.read(buffer)
-        val total = requestBody.contentLength()
-        var current = len.toLong()
-        while (len != -1){
-            fos?.write(buffer)
-            progressCallback?.invoke(current,total)
-            len = inputStream.read(buffer)
-            current +=len
+        val total = response.body?.contentLength() ?: 1
+        var current = 0L
+        val inputStream = response.body?.byteStream()
+        var fos = FileOutputStream(file)
+        len = inputStream?.read(buf) ?: -1
+        while (len != -1) {
+            current += len
+            fos.write(buf, 0, len)
+            val progress = current * 100f / total
+            if (progress <= 100) {
+                callback?.onProgress(progress.toInt())
+            }
+            len = inputStream?.read(buf) ?: -1
         }
-        fos?.close()
-        inputStream.close()
+        fos.flush()
+        inputStream?.close()
+        fos.close()
     }
 
     override fun cancel() {
